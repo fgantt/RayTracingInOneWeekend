@@ -14,6 +14,7 @@ func main() {
 
 	cam.SetAspectRatio(16.0 / 9.0)
 	cam.SetImageWidth(400)
+	cam.SetSamplesPerPixel(100)
 
 	cam.Render(world)
 }

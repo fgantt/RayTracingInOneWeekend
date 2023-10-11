@@ -8,13 +8,14 @@ import (
 )
 
 type Camera struct {
-	aspectRatio float64     // Ratio of image width over height
-	imageWidth  int         // Rendered image width in pixel count
-	imageHeight int         // Rendered image height
-	center      vec3.Point3 // Camera center
-	pixel00Loc  vec3.Point3 // Location of pixel 0, 0
-	pixelDeltaU vec3.Vec3   // Offset to pixel to the right
-	pixelDeltaV vec3.Vec3   // Offset to pixel below
+	aspectRatio     float64     // Ratio of image width over height
+	imageWidth      int         // Rendered image width in pixel count
+	samplesPerPixel int         // Count of random samples for each pixel
+	imageHeight     int         // Rendered image height
+	center          vec3.Point3 // Camera center
+	pixel00Loc      vec3.Point3 // Location of pixel 0, 0
+	pixelDeltaU     vec3.Vec3   // Offset to pixel to the right
+	pixelDeltaV     vec3.Vec3   // Offset to pixel below
 }
 
 func NewCamera() Camera {
@@ -30,6 +31,10 @@ func (cam *Camera) SetImageWidth(iw int) {
 	cam.imageWidth = iw
 }
 
+func (cam *Camera) SetSamplesPerPixel(samples int) {
+	cam.samplesPerPixel = samples
+}
+
 func (cam *Camera) Render(world vec3.Hittable) {
 	cam.initialize()
 
@@ -38,16 +43,13 @@ func (cam *Camera) Render(world vec3.Hittable) {
 	for j := 0; j < cam.imageHeight; j++ {
 		log.Printf("\rScanlines remaining: %d", cam.imageHeight-j)
 		for i := 0; i < cam.imageWidth; i++ {
-			pixelCenter := cam.pixel00Loc.
-				Add(cam.pixelDeltaU.
-					Mul(float64(i))).
-				Add(cam.pixelDeltaV.
-					Mul(float64(j)))
-			rayDirection := pixelCenter.Sub(cam.center.Vec3)
-			r := vec3.NewRay(cam.center, rayDirection)
-
-			pixelColor := rayColor(r, world)
-			fmt.Print(pixelColor.Write())
+			pixelColor := vec3.NewColor(0, 0, 0)
+			for sample := 0; sample < cam.samplesPerPixel; sample++ {
+				r := cam.GetRay(i, j)
+				rc := rayColor(r, world)
+				pixelColor.Vec3 = pixelColor.Vec3.Add(rc.Vec3)
+			}
+			fmt.Print(pixelColor.Write(cam.samplesPerPixel))
 		}
 	}
 	log.Println("\rDone.")
@@ -78,6 +80,30 @@ func (cam *Camera) initialize() {
 	viewportUpperLeft := cam.center.Sub(vec3.New(0, 0, focalLength)).Sub(viewportU.Div(2.0)).Sub(viewportV.Div(2.0))
 	vul := viewportUpperLeft.Add(cam.pixelDeltaU.Add(cam.pixelDeltaV).Mul(0.5))
 	cam.pixel00Loc = vec3.NewPoint3(vul.X(), vul.Y(), vul.Z())
+}
+
+func (cam *Camera) GetRay(i int, j int) vec3.Ray {
+	// Get a randomly sampled camera ray for the pixel at location i,j.
+
+	pixelCenter := cam.pixel00Loc.
+		Add(cam.pixelDeltaU.
+			Mul(float64(i))).
+		Add(cam.pixelDeltaV.
+			Mul(float64(j)))
+	pixelSample := pixelCenter.Add(cam.pixelSampleSquare())
+
+	rayOrigin := cam.center
+	rayDirection := pixelSample.Sub(rayOrigin.Vec3)
+
+	return vec3.NewRay(rayOrigin, rayDirection)
+}
+
+func (cam *Camera) pixelSampleSquare() vec3.Vec3 {
+	// Returns a random point in the square surrounding a pixel at the origin.
+	px := -0.5 + vec3.Random()
+	py := -0.5 + vec3.Random()
+	return cam.pixelDeltaU.Mul(px).Add(cam.pixelDeltaV.Mul(py))
+
 }
 
 func rayColor(r vec3.Ray, world vec3.Hittable) vec3.Color {
