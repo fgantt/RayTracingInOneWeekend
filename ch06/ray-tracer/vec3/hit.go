@@ -29,7 +29,7 @@ func (h Hit) SetFaceNormal(r Ray, outwardNormal Vec3) {
 }
 
 type Hittable interface {
-	Hit(r Ray, tMin float64, tMax float64) (bool, Hit)
+	Hit(r Ray, rayT Interval) (bool, Hit)
 }
 
 type HittableList struct {
@@ -47,13 +47,13 @@ func (lst HittableList) Clear() {
 	lst.Hittables = nil
 }
 
-func (lst HittableList) Hit(r Ray, tMin float64, tMax float64) (bool, Hit) {
+func (lst HittableList) Hit(r Ray, rayT Interval) (bool, Hit) {
 	hitAnything := false
-	closestSoFar := tMax
+	closestSoFar := rayT.Max()
 	rec := Hit{}
 
 	for _, obj := range lst.Hittables {
-		isHit, hit := obj.Hit(r, tMin, closestSoFar)
+		isHit, hit := obj.Hit(r, NewInterval(rayT.Min(), closestSoFar))
 		if isHit {
 			hitAnything = true
 			closestSoFar = hit.T()
