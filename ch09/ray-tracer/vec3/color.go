@@ -2,6 +2,7 @@ package vec3
 
 import (
 	"fmt"
+	"math"
 )
 
 type Color struct {
@@ -11,6 +12,10 @@ type Color struct {
 func NewColor(x float64, y float64, z float64) Color {
 	v := Color{Vec3{x, y, z}}
 	return v
+}
+
+func linearToGamma(linearComponent float64) float64 {
+	return math.Sqrt(linearComponent)
 }
 
 func (c Color) Write(samplesPerPixel int) string {
@@ -23,6 +28,11 @@ func (c Color) Write(samplesPerPixel int) string {
 	r = r * scale
 	g = g * scale
 	b = b * scale
+
+	// Apply the linear to gamma transform
+	r = linearToGamma(r)
+	g = linearToGamma(g)
+	b = linearToGamma(b)
 
 	// Write the translated [0,255] value of each color component.
 	intensity := NewInterval(0.000, 0.999)

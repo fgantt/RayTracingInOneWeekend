@@ -119,7 +119,7 @@ func rayColor(r vec3.Ray, depth int, world vec3.Hittable) vec3.Color {
 	isHit, hitRec := world.Hit(r, vec3.NewInterval(0.001, math.Inf(1)))
 	if isHit {
 		direction := hitRec.Normal().Add(vec3.RandomUnitVector())
-		tempV := rayColor(vec3.NewRay(hitRec.P(), direction), depth-1, world).Mul(0.5)
+		tempV := rayColor(vec3.NewRay(hitRec.P(), direction), depth-1, world).Mul(0.7)
 		return vec3.NewColor(tempV.X(), tempV.Y(), tempV.Z())
 	}
 
