@@ -116,7 +116,7 @@ func rayColor(r vec3.Ray, depth int, world vec3.Hittable) vec3.Color {
 	if depth <= 0 {
 		return vec3.NewColor(0, 0, 0)
 	}
-	isHit, hitRec := world.Hit(r, vec3.NewInterval(0, math.Inf(1)))
+	isHit, hitRec := world.Hit(r, vec3.NewInterval(0.001, math.Inf(1)))
 	if isHit {
 		direction := vec3.RandomOnHemisphere(hitRec.Normal())
 		tempV := rayColor(vec3.NewRay(hitRec.P(), direction), depth-1, world).Mul(0.5)
