@@ -11,6 +11,7 @@ type Camera struct {
 	aspectRatio     float64     // Ratio of image width over height
 	imageWidth      int         // Rendered image width in pixel count
 	samplesPerPixel int         // Count of random samples for each pixel
+	maxDepth        int         // Maximum number of ray bounces into scene
 	imageHeight     int         // Rendered image height
 	center          vec3.Point3 // Camera center
 	pixel00Loc      vec3.Point3 // Location of pixel 0, 0
@@ -19,7 +20,7 @@ type Camera struct {
 }
 
 func NewCamera() Camera {
-	c := Camera{aspectRatio: 1.0, imageWidth: 100}
+	c := Camera{aspectRatio: 1.0, imageWidth: 100, samplesPerPixel: 10, maxDepth: 10}
 	return c
 }
 
@@ -35,6 +36,10 @@ func (cam *Camera) SetSamplesPerPixel(samples int) {
 	cam.samplesPerPixel = samples
 }
 
+func (cam *Camera) SetMaxDepth(max int) {
+	cam.maxDepth = max
+}
+
 func (cam *Camera) Render(world vec3.Hittable) {
 	cam.initialize()
 
@@ -46,7 +51,7 @@ func (cam *Camera) Render(world vec3.Hittable) {
 			pixelColor := vec3.NewColor(0, 0, 0)
 			for sample := 0; sample < cam.samplesPerPixel; sample++ {
 				r := cam.GetRay(i, j)
-				rc := rayColor(r, world)
+				rc := rayColor(r, cam.maxDepth, world)
 				pixelColor.Vec3 = pixelColor.Vec3.Add(rc.Vec3)
 			}
 			fmt.Print(pixelColor.Write(cam.samplesPerPixel))
@@ -106,11 +111,15 @@ func (cam *Camera) pixelSampleSquare() vec3.Vec3 {
 
 }
 
-func rayColor(r vec3.Ray, world vec3.Hittable) vec3.Color {
+func rayColor(r vec3.Ray, depth int, world vec3.Hittable) vec3.Color {
+	//If we've exceeded the ray bounce limit, no more light is gathered.
+	if depth <= 0 {
+		return vec3.NewColor(0, 0, 0)
+	}
 	isHit, hitRec := world.Hit(r, vec3.NewInterval(0, math.Inf(1)))
 	if isHit {
 		direction := vec3.RandomOnHemisphere(hitRec.Normal())
-		tempV := rayColor(vec3.NewRay(hitRec.P(), direction), world).Mul(0.5)
+		tempV := rayColor(vec3.NewRay(hitRec.P(), direction), depth-1, world).Mul(0.5)
 		return vec3.NewColor(tempV.X(), tempV.Y(), tempV.Z())
 	}
 
