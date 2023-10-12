@@ -27,15 +27,16 @@ func (l Lambertian) Scatter(rIn Ray, rec Hit) (bool, Ray, Color) {
 
 type Metal struct {
 	albedo Color
+	fuzz   float64
 }
 
-func NewMetal(albedo Color) Metal {
-	return Metal{albedo: albedo}
+func NewMetal(albedo Color, fuzz float64) Metal {
+	return Metal{albedo: albedo, fuzz: fuzz}
 }
 
 func (m Metal) Scatter(rIn Ray, rec Hit) (bool, Ray, Color) {
 	reflected := Reflect(UnitVector(rIn.Direction()), rec.Normal())
-	scattered := NewRay(rec.P(), reflected)
+	scattered := NewRay(rec.P(), reflected.Add(RandomUnitVector().Mul(m.fuzz)))
 	attenuation := m.albedo
-	return true, scattered, attenuation
+	return Dot(scattered.Direction(), rec.Normal()) > 0, scattered, attenuation
 }
