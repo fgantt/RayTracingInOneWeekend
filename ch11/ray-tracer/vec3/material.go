@@ -1,5 +1,7 @@
 package vec3
 
+import "math"
+
 type Material interface {
 	Scatter(rIn Ray, rec Hit) (bool, Ray, Color)
 }
@@ -59,8 +61,18 @@ func (d Dielectric) Scatter(rIn Ray, rec Hit) (bool, Ray, Color) {
 	}
 
 	unitDirection := UnitVector(rIn.direction)
-	refracted := Refract(unitDirection, rec.Normal(), refractionRatio)
+	cosTheta := math.Min(Dot(unitDirection.Inv(), rec.Normal()), 1.0)
+	sinTheta := math.Sqrt(1.0 - cosTheta*cosTheta)
 
-	scattered := NewRay(rec.P(), refracted)
+	cannotRefract := refractionRatio*sinTheta > 1.0
+	var direction Vec3
+
+	if cannotRefract {
+		direction = Reflect(unitDirection, rec.Normal())
+	} else {
+		direction = Refract(unitDirection, rec.Normal(), refractionRatio)
+	}
+
+	scattered := NewRay(rec.P(), direction)
 	return true, scattered, attenuation
 }
