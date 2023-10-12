@@ -67,7 +67,7 @@ func (d Dielectric) Scatter(rIn Ray, rec Hit) (bool, Ray, Color) {
 	cannotRefract := refractionRatio*sinTheta > 1.0
 	var direction Vec3
 
-	if cannotRefract {
+	if cannotRefract || reflectance(cosTheta, refractionRatio) > Random() {
 		direction = Reflect(unitDirection, rec.Normal())
 	} else {
 		direction = Refract(unitDirection, rec.Normal(), refractionRatio)
@@ -75,4 +75,11 @@ func (d Dielectric) Scatter(rIn Ray, rec Hit) (bool, Ray, Color) {
 
 	scattered := NewRay(rec.P(), direction)
 	return true, scattered, attenuation
+}
+
+func reflectance(cosine float64, refIdx float64) float64 {
+	// Use Schlick's approximation for reflectance.
+	r0 := (1 - refIdx) / (1 + refIdx)
+	r0 = r0 * r0
+	return r0 + (1-r0)*math.Pow((1-cosine), 5)
 }

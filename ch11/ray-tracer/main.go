@@ -16,6 +16,7 @@ func main() {
 	world.Add(vec3.NewSphere(vec3.NewPoint3(0.0, -100.5, -1.0), 100.0, materialGround))
 	world.Add(vec3.NewSphere(vec3.NewPoint3(0.0, 0.0, -1.0), 0.5, materialCenter))
 	world.Add(vec3.NewSphere(vec3.NewPoint3(-1.0, 0.0, -1.0), 0.5, materialLeft))
+	world.Add(vec3.NewSphere(vec3.NewPoint3(-1.0, 0.0, -1.0), -0.4, materialLeft))
 	world.Add(vec3.NewSphere(vec3.NewPoint3(1.0, 0.0, -1.0), 0.5, materialRight))
 
 	cam := camera.NewCamera()
