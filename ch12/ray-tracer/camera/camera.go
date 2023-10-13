@@ -14,10 +14,14 @@ type Camera struct {
 	maxDepth        int         // Maximum number of ray bounces into scene
 	imageHeight     int         // Rendered image height
 	vfov            float64     // Vertical view angle (field of view)
+	lookFrom        vec3.Point3 // Point camera is looking from
+	lookAt          vec3.Point3 // Point camera is looking at
+	vup             vec3.Vec3   // Camera-relative "up" direction
 	center          vec3.Point3 // Camera center
 	pixel00Loc      vec3.Point3 // Location of pixel 0, 0
 	pixelDeltaU     vec3.Vec3   // Offset to pixel to the right
 	pixelDeltaV     vec3.Vec3   // Offset to pixel below
+	u, v, w         vec3.Vec3   // Camera frame basis vectors
 }
 
 func NewCamera() Camera {
@@ -43,6 +47,18 @@ func (cam *Camera) SetMaxDepth(max int) {
 
 func (cam *Camera) SetVerticalFieldOfView(vfov float64) {
 	cam.vfov = vfov
+}
+
+func (cam *Camera) SetLookFrom(lookFrom vec3.Point3) {
+	cam.lookFrom = lookFrom
+}
+
+func (cam *Camera) SetLookAt(lookAt vec3.Point3) {
+	cam.lookAt = lookAt
+}
+
+func (cam *Camera) SetRelativeUpDirection(vup vec3.Vec3) {
+	cam.vup = vup
 }
 
 func (cam *Camera) Render(world vec3.Hittable) {
@@ -72,24 +88,30 @@ func (cam *Camera) initialize() {
 		cam.imageHeight = 1
 	}
 
-	cam.center = vec3.NewPoint3(0, 0, 0)
+	cam.center = cam.lookFrom
 
-	var focalLength float64 = 1.0
+	// Determine viewport dimensions
+	focalLength := cam.lookFrom.Sub(cam.lookAt.Vec3).Length()
 	theta := vec3.DegreesToRadians(cam.vfov)
 	h := math.Tan(theta / 2)
 	var viewportHeight float64 = 2.0 * h * focalLength
 	viewportWidth := viewportHeight * (float64(cam.imageWidth) / float64(cam.imageHeight))
 
+	// Calculate the u,v,w unit basis vectors for the camera coordinate frame.
+	cam.w = vec3.UnitVector(cam.lookFrom.Sub(cam.lookAt.Vec3))
+	cam.u = vec3.UnitVector(vec3.Cross(cam.vup, cam.w))
+	cam.v = vec3.Cross(cam.w, cam.u)
+
 	// Calculate the vectors across the horizontal and down the vertical viewport edges.
-	viewportU := vec3.New(viewportWidth, 0, 0)
-	viewportV := vec3.New(0, -viewportHeight, 0)
+	viewportU := cam.u.Mul(viewportWidth)        // Vector across viewport horizontal edge
+	viewportV := cam.v.Inv().Mul(viewportHeight) // Vector down viewport vertical edge
 
 	// Calculate the horizontal and vertical delta vectors from pixel to pixel.
 	cam.pixelDeltaU = viewportU.Div(float64(cam.imageWidth))
 	cam.pixelDeltaV = viewportV.Div(float64(cam.imageHeight))
 
 	// Calculate the location of the upper left pixel.
-	viewportUpperLeft := cam.center.Sub(vec3.New(0, 0, focalLength)).Sub(viewportU.Div(2.0)).Sub(viewportV.Div(2.0))
+	viewportUpperLeft := cam.center.Sub(cam.w.Mul(focalLength)).Sub(viewportU.Div(2.0)).Sub(viewportV.Div(2.0))
 	vul := viewportUpperLeft.Add(cam.pixelDeltaU.Add(cam.pixelDeltaV).Mul(0.5))
 	cam.pixel00Loc = vec3.NewPoint3(vul.X(), vul.Y(), vul.Z())
 }

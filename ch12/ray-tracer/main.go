@@ -1,7 +1,6 @@
 package main
 
 import (
-	"math"
 	"vec3/camera"
 	"vec3/vec3"
 )
@@ -9,24 +8,16 @@ import (
 func main() {
 	world := vec3.HittableList{}
 
-	R := math.Cos(math.Pi / 4)
+	materialGround := vec3.NewLambertian(vec3.NewColor(0.8, 0.8, 0.0))
+	materialCenter := vec3.NewLambertian(vec3.NewColor(0.1, 0.2, 0.5))
+	materialLeft := vec3.NewDielectric(1.5)
+	materialRight := vec3.NewMetal(vec3.NewColor(0.8, 0.6, 0.2), 0.0)
 
-	materialLeft := vec3.NewLambertian(vec3.NewColor(0, 0, 1))
-	materialRight := vec3.NewLambertian(vec3.NewColor(1, 0, 0))
-
-	world.Add(vec3.NewSphere(vec3.NewPoint3(-R, 0.0, -1.0), R, materialLeft))
-	world.Add(vec3.NewSphere(vec3.NewPoint3(R, 0.0, -1.0), R, materialRight))
-
-	//materialGround := vec3.NewLambertian(vec3.NewColor(0.8, 0.8, 0.0))
-	//materialCenter := vec3.NewLambertian(vec3.NewColor(0.1, 0.2, 0.5))
-	//materialLeft := vec3.NewDielectric(1.5)
-	//materialRight := vec3.NewMetal(vec3.NewColor(0.8, 0.6, 0.2), 0.0)
-	//
-	//world.Add(vec3.NewSphere(vec3.NewPoint3(0.0, -100.5, -1.0), 100.0, materialGround))
-	//world.Add(vec3.NewSphere(vec3.NewPoint3(0.0, 0.0, -1.0), 0.5, materialCenter))
-	//world.Add(vec3.NewSphere(vec3.NewPoint3(-1.0, 0.0, -1.0), 0.5, materialLeft))
-	//world.Add(vec3.NewSphere(vec3.NewPoint3(-1.0, 0.0, -1.0), -0.4, materialLeft))
-	//world.Add(vec3.NewSphere(vec3.NewPoint3(1.0, 0.0, -1.0), 0.5, materialRight))
+	world.Add(vec3.NewSphere(vec3.NewPoint3(0.0, -100.5, -1.0), 100.0, materialGround))
+	world.Add(vec3.NewSphere(vec3.NewPoint3(0.0, 0.0, -1.0), 0.5, materialCenter))
+	world.Add(vec3.NewSphere(vec3.NewPoint3(-1.0, 0.0, -1.0), 0.5, materialLeft))
+	world.Add(vec3.NewSphere(vec3.NewPoint3(-1.0, 0.0, -1.0), -0.4, materialLeft))
+	world.Add(vec3.NewSphere(vec3.NewPoint3(1.0, 0.0, -1.0), 0.5, materialRight))
 
 	cam := camera.NewCamera()
 
@@ -35,7 +26,10 @@ func main() {
 	cam.SetSamplesPerPixel(100)
 	cam.SetMaxDepth(50)
 
-	cam.SetVerticalFieldOfView(90)
+	cam.SetVerticalFieldOfView(20)
+	cam.SetLookFrom(vec3.NewPoint3(-2, 2, 1))
+	cam.SetLookAt(vec3.NewPoint3(0, 0, -1))
+	cam.SetRelativeUpDirection(vec3.New(0, 1, 0))
 
 	cam.Render(world)
 }
